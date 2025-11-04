@@ -57,4 +57,4 @@ if __name__ == "__main__":
             example = X_test[:1]
             mlflow.sklearn.log_model(model, name="model", input_example=example)
 
-            print(f"✅ Run logged: n={params['n_estimators']}, depth={params['max_depth']}, mse={mse:.4f}, r2={r2:.4f}")
+            print(f"Run logged: n={params['n_estimators']}, depth={params['max_depth']}, mse={mse:.4f}, r2={r2:.4f}")
