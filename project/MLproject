@@ -4,4 +4,8 @@ conda_env: conda.yaml
 
 entry_points:
     main:
+        command: "python ../app.py"
+    train:
         command: "python train.py && python register_best.py"
+    serve:
+        command: "python ../app.py"
