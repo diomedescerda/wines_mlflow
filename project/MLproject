@@ -1,10 +1,7 @@
-name: wine_regression_project
+name: wine_random_forest_project
 
 conda_env: conda.yaml
 
 entry_points:
     main:
-        parameters:
-            alpha: {type:float, default:1.0}
-            test_size: {type:float, default:0.2}
-        command: "python train.py --alpha {alpha} --test_size {test_size}"
+        command: "python train.py"
