@@ -3,7 +3,9 @@ import mlflow
 from mlflow.tracking import MlflowClient
 import pandas as pd
 import plotly.express as px
+from genai import genai_explanations
 
+mlflow.set_tracking_uri("http://localhost:5000")
 MODEL_NAME = "WineQuality"
 
 ENGLISH_FEATURES = [
@@ -28,7 +30,10 @@ def predict_quality(*manual_inputs):
     if all(val is not None for val in manual_inputs):
         input_df = pd.DataFrame([manual_inputs], columns=ENGLISH_FEATURES)
         pred = model.predict(input_df.values)[0]
-        return pred
+        features_dict = dict(zip(ENGLISH_FEATURES, manual_inputs))
+        explanation = genai_explanations("individual", features_dict, pred)
+        
+        return pred, explanation
     else:
         return ("Por favor completa los campos.")
 
@@ -48,7 +53,11 @@ def predict_quality_from_csv(file_obj):
     preds = model.predict(df[ENGLISH_FEATURES].values)
     df["predicted_quality"] = preds
 
-    return df
+    avg_features = df[ENGLISH_FEATURES].mean().to_dict()
+    avg_pred = df["predicted_quality"].mean()
+    explanation = genai_explanations("csv", avg_features, avg_pred)
+
+    return df, explanation
 
 def get_model_metrics(model_name=MODEL_NAME, stage_or_version="champion"):
     client = mlflow.tracking.MlflowClient()
@@ -150,12 +159,14 @@ with gr.Blocks(title="Predicción de Calidad de Vino") as demo:
         with gr.Row():
             with gr.Column():
                 output_pred = gr.Textbox(label="Resultado")
+                output_explanation = gr.Textbox(label="Explicación Generada", lines=3)
+
         gr.Markdown(metrics_md)
         
         predict_btn.click(
             fn=predict_quality,
             inputs = inputs,
-            outputs = output_pred
+            outputs = [output_pred, output_explanation]
         )
     
     with gr.Tab("Subir CSV"):
@@ -169,13 +180,14 @@ with gr.Blocks(title="Predicción de Calidad de Vino") as demo:
         
         with gr.Row():
             csv_output_table = gr.DataFrame(label="Resultado", wrap=True)
+        output_explanation = gr.Textbox(label="Explicación Generada", lines=3)
 
         gr.Markdown(metrics_md)
         
         predict_btn.click(
             fn=predict_quality_from_csv,
             inputs = csv_input,
-            outputs = csv_output_table
+            outputs = [csv_output_table, output_explanation]
         )
 
     with gr.Tab("Comparar Versiones"):

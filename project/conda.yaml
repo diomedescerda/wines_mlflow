@@ -9,3 +9,6 @@ dependencies:
     - pydantic
     - scikit-learn
     - gradio
+    - openai
+    - plotly
+    - python-dotenv
