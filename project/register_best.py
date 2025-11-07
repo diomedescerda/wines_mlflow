@@ -22,3 +22,9 @@ if best_run:
 
 else:
     print("No se encontraron runs.")
+
+client.transition_model_version_stage(
+    name="WineQuality",
+    version=1,
+    stage="Staging"
+)
