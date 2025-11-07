@@ -15,8 +15,10 @@ if best_run:
     model_uri = f"runs:/{best_run.info.run_id}/model"
     model_details = mlflow.register_model(
         model_uri = model_uri,
-        name = "WineQualityModel"
+        name = "WineQuality"
     )
-    print(f"Modelo registrado como versión {model_details.version} en 'WineQualityModel'")
+    print(f"Modelo registrado como versión {model_details.version} en 'WineQuality'")
+    client.set_registered_model_alias("WineQuality", "champion", 1)
+
 else:
     print("No se encontraron runs.")

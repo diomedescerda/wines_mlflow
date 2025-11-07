@@ -1,4 +1,6 @@
 import gradio as gr
+import mlflow
+import pandas as pd
 
 ENGLISH_FEATURES = [
     "fixed acidity", "volatile acidity", "citric acid", "residual sugar",
@@ -12,8 +14,40 @@ SPANISH_LABELS = [
     "pH", "Sulfatos", "Alcohol"
 ]
 
+def load_model():
+    model_uri = f"models:/WineQuality@champion"
+    model = mlflow.sklearn.load_model(model_uri)
+    return model
+
+def predict_quality(*manual_inputs):
+    model = load_model()
+    if all(val is not None for val in manual_inputs):
+        input_df = pd.DataFrame([manual_inputs], columns=ENGLISH_FEATURES)
+        pred = model.predict(input_df.values)[0]
+        return pred
+    else:
+        return ("Por favor completa los campos.")
+
+def get_model_metrics(stage_or_version="champion"):
+    client = mlflow.tracking.MlflowClient()
+    model_versions = client.search_model_versions("name='WineQuality'")
+    for mv in model_versions:
+        if mv.aliases[0] == stage_or_version or mv.version == stage_or_version:
+            run_id = mv.run_id
+            run = client.get_run(run_id)
+            return run.data.metrics
+    return {}
+
+metrics = get_model_metrics("champion")
+if metrics:
+    metrics_md = "## 📊Métricas del Modelo Champion\n" + "\n".join(
+        [f"- **{k.upper()}**: {v:.4f}" for k, v in metrics.items()]
+    )
+else:
+    metrics_md = "No se encontraron métricas para el modelo."
+
 with gr.Blocks(title="Predicción de Calidad de Vino") as demo:
-    gr.Markdown("# Calidad de Vinos")
+    gr.Markdown("# Calidad de vinos")
     
     with gr.Tab("Entrada Manual"):
         inputs = []
@@ -41,9 +75,12 @@ with gr.Blocks(title="Predicción de Calidad de Vino") as demo:
     with gr.Row():
         with gr.Column():
             output_pred = gr.Textbox(label="Resultado")
-            quality_gauge = gr.Label(label="Calidad")
-        with gr.Column():
-            output_metrics = gr.Textbox(label="Métricas")
-            output_prob = gr.Number(label="Confianza")
+    gr.Markdown(metrics_md)
+    
+    predict_btn.click(
+        fn=predict_quality,
+        inputs = inputs,
+        outputs = output_pred
+    )
 
 demo.launch()
