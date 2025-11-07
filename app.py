@@ -32,6 +32,24 @@ def predict_quality(*manual_inputs):
     else:
         return ("Por favor completa los campos.")
 
+def predict_quality_from_csv(file_obj):
+    if file_obj is None:
+        return pd.DataFrame(), None
+
+    model = load_model()
+    df = pd.read_csv(file_obj.name)
+
+    missing = [col for col in ENGLISH_FEATURES if col not in df.columns]
+    if missing:
+        return pd.DataFrame({
+            "error": [f"Columnas faltantes: {', '.join(missing)}"]
+        }), None
+
+    preds = model.predict(df[ENGLISH_FEATURES].values)
+    df["predicted_quality"] = preds
+
+    return df
+
 def get_model_metrics(model_name=MODEL_NAME, stage_or_version="champion"):
     client = mlflow.tracking.MlflowClient()
     model_versions = client.search_model_versions(f"name='{model_name}'")
@@ -141,20 +159,23 @@ with gr.Blocks(title="Predicción de Calidad de Vino") as demo:
         )
     
     with gr.Tab("Subir CSV"):
-        gr.Markdown("Sube un archivo CSV con las columnas del dataset de vinos.")
+        gr.Markdown(
+            "El archivo CSV debe contener las siguientes columnas: "
+            + ", ".join(ENGLISH_FEATURES)
+        )
+
         csv_input = gr.File(label="Archivo CSV", file_types=[".csv"])
-    
         predict_btn = gr.Button("🎯 Predecir Calidad", variant="primary")
         
         with gr.Row():
-            with gr.Column():
-                output_pred = gr.Textbox(label="Resultado")
+            csv_output_table = gr.DataFrame(label="Resultado", wrap=True)
+
         gr.Markdown(metrics_md)
         
         predict_btn.click(
-            fn=predict_quality,
-            inputs = inputs,
-            outputs = output_pred
+            fn=predict_quality_from_csv,
+            inputs = csv_input,
+            outputs = csv_output_table
         )
 
     with gr.Tab("Comparar Versiones"):
