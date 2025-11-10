@@ -19,8 +19,8 @@ mlflow ui --port 5000
 
 Ejecuta el pipeline de entrenamiento, que incluye:
 
-- Entrenamiento de un modelo Random Forest
-- Registro automático del mejor modelo en el Model Registry
+- Entrenamiento de modelos Random Forest
+- Registro automático de los dos mejores modelos en el Model Registry
 - Asignación de alias (staging, production)
 ```bash
 mlflow run project --experiment-name wines_rf_tuning -e train
